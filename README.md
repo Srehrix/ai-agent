@@ -32,6 +32,4 @@ Quick start
    python .\test_runner.py
    ```
 
-Publishing to GitHub
-
 Follow the instructions in this repository to initialize git and push to a GitHub repository. See the project root for `.gitignore` and `LICENSE` files.

@@ -9,8 +9,10 @@ This script:
 - runs a single debug query and prints a concise text response (no raw repr).
 """
 
+import argparse
 import asyncio
 import os
+import sys
 from typing import Any, Optional
 """Minimal test runner for ADK InMemoryRunner.
 
@@ -79,14 +81,26 @@ def extract_text_from_response(resp: Any) -> Optional[str]:
     return None
 
 
-async def main() -> None:
+async def main(query: Optional[str] = None) -> None:
     try:
         runner: Any = adk_setup.ensure_runner()
     except Exception as e:
         print("⚠️ Failed to initialize ADK runner:", e)
         raise SystemExit(2)
 
-    query = "What's the weather in Bengaluru?"
+    # Determine query: prefer passed-in value, otherwise prompt the user
+    if not query:
+        # If stdin is not a TTY (CI or redirected), fallback to default
+        default = "What's the weather in Bengaluru?"
+        if sys.stdin and sys.stdin.isatty():
+            try:
+                prompt = input("Enter a query for the agent (press Enter for default): ").strip()
+                query = prompt or default
+            except EOFError:
+                query = default
+        else:
+            query = default
+
     print(f"Running debug call: {query!r}")
 
     try:
@@ -104,8 +118,12 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="test_runner.py", description="Run an ADK debug query and print concise text output")
+    parser.add_argument("-q", "--query", help="Query to send to the agent (if omitted you'll be prompted)")
+    args = parser.parse_args()
+
     try:
-        asyncio.run(main())
+        asyncio.run(main(args.query))
     except KeyboardInterrupt:
         print("Interrupted by user")
         raise SystemExit(1)
